@@ -13,6 +13,7 @@
     return Number.isNaN(date.getTime())?null:date;
   };
   const iso = date => date.toISOString().slice(0,10);
+  const localTodayISO = () => { const d=new Date(); return [d.getFullYear(),String(d.getMonth()+1).padStart(2,"0"),String(d.getDate()).padStart(2,"0")].join("-"); };
   const daysBetween = (start,end) => Math.round((end-start)/86400000);
   const displayDate = value => {const date=typeof value==="string"?parseISO(value):value;return date?dateFormatter.format(date):"—";};
   const escapeHTML = value => String(value??"").replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[char]));
@@ -162,7 +163,7 @@
   $("#excelFile").addEventListener("change",event=>handleFile(event.target.files[0]));
   $("#calculateBtn").addEventListener("click",()=>{try{calculate();toast("Compensation recalculated.");}catch(error){toast(error.message);}});
   $("#addPaymentBtn").addEventListener("click",()=>{
-    state.payments.push({date:$("#compensationStart").value||iso(new Date()),particulars:"New payment",amount:0});
+    state.payments.push({date:$("#compensationStart").value||localTodayISO(),particulars:"New payment",amount:0});
     state.result=[];renderPayments();
   });
   $("#clearPaymentsBtn").addEventListener("click",()=>{
@@ -183,6 +184,6 @@
   $("#downloadTemplateBtn").addEventListener("click",downloadTemplate);
   $("#exportBtn").addEventListener("click",exportCSV);
   $("#printBtn").addEventListener("click",()=>state.result.length?window.print():toast("Calculate compensation before printing."));
-  $("#calculationEnd").value=iso(new Date());
+  $("#calculationEnd").value=localTodayISO();
   updateRateUI();renderPayments();
 })();
