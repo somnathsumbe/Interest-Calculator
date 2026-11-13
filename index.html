@@ -112,15 +112,15 @@
 
         <div class="card app-card mb-4"><div class="card-body p-4">
           <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-            <div><h2 class="h5 fw-bold mb-1">Monthly interest report</h2><p class="small text-secondary mb-0">प्रत्येक महिन्यात जमा झालेले व्याज आणि आतापर्यंतचे एकूण व्याज.</p></div>
+            <div><h2 class="h5 fw-bold mb-1">Monthly interest report</h2><p class="small text-secondary mb-0">प्रत्येक महिन्यापर्यंत बिल्डरला भरलेली एकूण रक्कम आणि त्या महिन्याचे व्याज.</p></div>
             <span class="soft-badge"><span id="monthlyInterestCount">0</span> months</span>
           </div>
           <div class="table-responsive breakdown-wrap"><table class="table table-hover align-middle mb-0">
-            <thead><tr><th>Month</th><th class="text-end">Monthly interest (₹)</th></tr></thead>
+            <thead><tr><th>Month</th><th class="text-end">Total paid to builder (₹)</th><th class="text-end">Monthly interest (₹)</th></tr></thead>
             <tbody id="monthlyInterestBody"></tbody>
           </table></div>
           <p id="emptyMonthlyInterest" class="small text-secondary py-2 mb-0">Calculate compensation to see the monthly interest breakdown.</p>
-          <p class="calculation-note mt-3 mb-0">प्रत्येक महिन्याचे व्याज स्वतंत्रपणे दाखवले आहे. मागील महिन्याचे व्याज पुढील महिन्याच्या मुद्दलात जोडले जात नाही; चक्रवाढ व्याज लागू केलेले नाही.</p>
+          <p class="calculation-note mt-3 mb-0">Total paid to builder हा त्या महिन्याच्या अखेरपर्यंतच्या सर्व नोंदवलेल्या पेमेंटचा एकत्रित आकडा आहे. Monthly interest फक्त त्या महिन्याचे स्वतंत्र व्याज आहे; मागील व्याज मुद्दलात जोडले जात नाही.</p>
         </div></div>
 
         <div class="card app-card"><div class="card-body p-4">
