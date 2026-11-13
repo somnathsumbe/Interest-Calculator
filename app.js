@@ -7,7 +7,7 @@
     agreementValue: 7381752,
     gstRate: 5,
     gstAmount: 369088,
-    stampDutyRegistration: 269500
+    stampDutyRegistration: 251500
   });
   function renderProjectFinancials(){
     const fmt=value=>new Intl.NumberFormat("en-IN",{style:"currency",currency:"INR",maximumFractionDigits:0}).format(value);
