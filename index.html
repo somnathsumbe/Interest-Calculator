@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#17324d">
+  <meta name="description" content="Simple and compound interest calculator with monthly date-based calculations.">
+  <title>Interest Calculator</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="styles.css" rel="stylesheet">
+</head>
+<body>
+  <nav class="navbar app-navbar">
+    <div class="container">
+      <a class="navbar-brand fw-bold text-white" href="#"><span class="brand-mark">₹</span> Interest Calculator</a>
+      <span class="text-white-50 small d-none d-sm-inline">Simple • Compound • Monthly</span>
+    </div>
+  </nav>
+  <main class="container py-4 py-lg-5">
+    <header class="page-heading mb-4">
+      <p class="eyebrow mb-2">FINANCIAL CALCULATOR</p>
+      <h1 class="h2 fw-bold mb-2">Calculate your interest</h1>
+      <p class="text-secondary mb-0">Enter the principal, annual rate and date range to calculate simple or compound interest.</p>
+    </header>
+    <div class="row g-4">
+      <section class="col-lg-5">
+        <div class="card app-card h-100"><div class="card-body p-4">
+          <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="h5 fw-bold mb-0">Calculation details</h2><span class="soft-badge">INR (₹)</span>
+          </div>
+          <form id="calculatorForm" novalidate>
+            <div class="mb-3">
+              <label for="principal" class="form-label">Principal amount (₹)</label>
+              <div class="input-group input-group-lg"><span class="input-group-text">₹</span><input id="principal" class="form-control" type="number" min="0.01" step="0.01" value="500000" required></div>
+              <div class="invalid-feedback">Enter a principal greater than zero.</div>
+            </div>
+            <div class="mb-3">
+              <label for="rate" class="form-label">Annual interest rate (%)</label>
+              <div class="input-group input-group-lg"><input id="rate" class="form-control" type="number" min="0" max="1000" step="0.01" value="8.5" required><span class="input-group-text">%</span></div>
+              <div class="invalid-feedback">Enter a valid rate from 0 to 1000%.</div>
+            </div>
+            <div class="row g-3 mb-3">
+              <div class="col-sm-6"><label for="startDate" class="form-label">Start date</label><input id="startDate" class="form-control" type="date" required><div class="invalid-feedback">Select a valid start date.</div></div>
+              <div class="col-sm-6"><label for="endDate" class="form-label">End date</label><input id="endDate" class="form-control" type="date" required><div class="invalid-feedback">End date must be on or after start date.</div></div>
+            </div>
+            <div class="mb-4">
+              <label class="form-label d-block">Interest calculation</label>
+              <div class="calc-choice">
+                <input class="btn-check" type="radio" name="interestType" id="simple" value="simple" checked><label class="btn btn-outline-primary" for="simple">Simple interest</label>
+                <input class="btn-check" type="radio" name="interestType" id="compound" value="compound"><label class="btn btn-outline-primary" for="compound">Compound interest</label>
+              </div>
+              <div class="form-text mt-2">Monthly calculation frequency is used for both methods.</div>
+            </div>
+            <div class="d-grid gap-2"><button class="btn btn-primary btn-lg" type="submit">Calculate interest</button><button class="btn btn-light border" type="reset" id="resetBtn">Reset fields</button></div>
+          </form>
+        </div></div>
+      </section>
+      <section class="col-lg-7" aria-live="polite">
+        <div class="card result-card mb-4"><div class="card-body p-4">
+          <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+            <div><p class="eyebrow mb-1">CALCULATION SUMMARY</p><h2 class="h5 fw-bold mb-0">Your result</h2></div><span id="resultType" class="soft-badge">Simple interest</span>
+          </div>
+          <div class="result-total mb-3"><div class="text-white-50 small mb-1">Total amount / maturity value</div><div id="totalAmount" class="display-6 fw-bold text-white">—</div></div>
+          <div class="row g-3">
+            <div class="col-sm-4"><div class="metric-box"><div class="metric-label">Principal</div><div id="principalResult" class="metric-value">—</div></div></div>
+            <div class="col-sm-4"><div class="metric-box"><div class="metric-label">Interest earned</div><div id="interestResult" class="metric-value text-success">—</div></div></div>
+            <div class="col-sm-4"><div class="metric-box"><div class="metric-label">Duration</div><div id="durationResult" class="metric-value">—</div></div></div>
+          </div>
+          <div class="d-flex flex-wrap gap-2 mt-4"><button id="printBtn" class="btn btn-outline-primary" type="button">Print report</button><button id="saveBtn" class="btn btn-outline-secondary" type="button">Save to history</button></div>
+        </div></div>
+        <div class="card app-card"><div class="card-body p-4">
+          <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3"><div><h2 class="h5 fw-bold mb-1">Interest breakdown</h2><p class="small text-secondary mb-0">Monthly accrual and balance progression</p></div><span id="breakdownCount" class="small text-secondary"></span></div>
+          <div class="table-responsive breakdown-wrap"><table class="table table-hover align-middle mb-0"><thead><tr><th>Period</th><th class="text-end">Opening balance</th><th class="text-end">Interest</th><th class="text-end">Closing balance</th></tr></thead><tbody id="breakdownBody"></tbody></table></div>
+          <p id="emptyBreakdown" class="text-secondary small py-3 d-none">No elapsed time in the selected date range.</p>
+          <p class="calculation-note mt-3 mb-0"><strong>Method:</strong> Monthly rate = annual rate ÷ 12. Full months use the monthly rate; a partial month is prorated by actual elapsed days in that calendar month. Simple interest uses the original principal; compound interest uses the accumulated balance.</p>
+        </div></div>
+      </section>
+    </div>
+    <section class="card app-card mt-4" id="historySection"><div class="card-body p-4">
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3"><div><h2 class="h5 fw-bold mb-1">Calculation history</h2><p class="small text-secondary mb-0">Saved in this browser using localStorage.</p></div><button id="clearHistoryBtn" class="btn btn-sm btn-outline-danger" type="button">Clear history</button></div>
+      <div class="table-responsive"><table class="table table-hover align-middle mb-0"><thead><tr><th>Saved on</th><th>Type</th><th class="text-end">Principal</th><th class="text-end">Interest</th><th class="text-end">Total</th><th></th></tr></thead><tbody id="historyBody"></tbody></table></div>
+      <p id="emptyHistory" class="text-secondary small mb-0 py-3">No saved calculations yet. Calculate an amount and select “Save to history”.</p>
+    </div></section>
+    <footer class="text-center text-secondary small py-4">For estimation and informational purposes. Verify contractual, banking and tax calculations independently.</footer>
+  </main>
+  <div class="toast-container position-fixed bottom-0 end-0 p-3"><div id="appToast" class="toast border-0 text-bg-dark" role="status" aria-live="polite" aria-atomic="true"><div class="d-flex"><div class="toast-body" id="toastMessage">Saved.</div><button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button></div></div></div>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
