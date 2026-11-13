@@ -73,13 +73,17 @@
     });
     return [...months.values()].sort((a,b)=>a.key.localeCompare(b.key)).map(month=>{
       const [year,monthNo]=month.key.split("-").map(Number);
-      return {...month,label:new Intl.DateTimeFormat("en-IN",{month:"long",year:"numeric",timeZone:"UTC"}).format(new Date(Date.UTC(year,monthNo-1,1)))};
+      const nextMonth=new Date(Date.UTC(year,monthNo,1));
+      const cutoff=iso(nextMonth);
+      const totalPaidToDate=rows.reduce((sum,row)=>sum+(row.date<cutoff?Number(row.amount)||0:0),0);
+      return {...month,totalPaidToDate,label:new Intl.DateTimeFormat("en-IN",{month:"long",year:"numeric",timeZone:"UTC"}).format(new Date(Date.UTC(year,monthNo-1,1)))};
     });
   }
   function renderMonthlyBreakdown(rows,settings){
     const monthly=buildMonthlyBreakdown(rows,settings);
     $("#monthlyInterestBody").innerHTML=monthly.map(month=>`<tr>
       <td>${escapeHTML(month.label)}</td>
+      <td class="text-end fw-semibold">${money(month.totalPaidToDate)}</td>
       <td class="text-end fw-semibold">${money(month.interest)}</td>
     </tr>`).join("");
     $("#monthlyInterestCount").textContent=String(monthly.length);
