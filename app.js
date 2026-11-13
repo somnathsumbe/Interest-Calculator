@@ -65,28 +65,23 @@
         if(days>0){
           const key=cursor.toISOString().slice(0,7);
           const interest=row.amount*settings.rate*days/(100*settings.basis);
-          const current=months.get(key)||{key,days:0,interest:0};
-          current.days+=days;current.interest+=interest;months.set(key,current);
+          const current=months.get(key)||{key,interest:0};
+          current.interest+=interest;months.set(key,current);
         }
         cursor=segmentEnd;
       }
     });
-    let cumulative=0;
     return [...months.values()].sort((a,b)=>a.key.localeCompare(b.key)).map(month=>{
-      cumulative+=month.interest;
       const [year,monthNo]=month.key.split("-").map(Number);
-      return {...month,label:new Intl.DateTimeFormat("en-IN",{month:"long",year:"numeric",timeZone:"UTC"}).format(new Date(Date.UTC(year,monthNo-1,1))),cumulative};
+      return {...month,label:new Intl.DateTimeFormat("en-IN",{month:"long",year:"numeric",timeZone:"UTC"}).format(new Date(Date.UTC(year,monthNo-1,1)))};
     });
   }
   function renderMonthlyBreakdown(rows,settings){
     const monthly=buildMonthlyBreakdown(rows,settings);
     $("#monthlyInterestBody").innerHTML=monthly.map(month=>`<tr>
       <td>${escapeHTML(month.label)}</td>
-      <td class="text-end">${month.days.toLocaleString("en-IN")}</td>
       <td class="text-end fw-semibold">${money(month.interest)}</td>
-      <td class="text-end fw-semibold text-success">${money(month.cumulative)}</td>
     </tr>`).join("");
-    $("#monthlyInterestTotal").textContent=money(monthly.reduce((sum,item)=>sum+item.interest,0));
     $("#monthlyInterestCount").textContent=String(monthly.length);
     $("#emptyMonthlyInterest").classList.toggle("d-none",monthly.length>0);
   }
