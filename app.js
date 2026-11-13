@@ -1,142 +1,188 @@
 (() => {
   "use strict";
-  const STORAGE_KEY = "interestCalculator.history.v1";
-  const MAX_HISTORY = 50;
   const $ = (selector) => document.querySelector(selector);
-  const form = $("#calculatorForm");
-  const currency = new Intl.NumberFormat("en-IN", { style:"currency", currency:"INR", minimumFractionDigits:2, maximumFractionDigits:2 });
-  const dateFormatter = new Intl.DateTimeFormat("en-IN", { day:"2-digit", month:"short", year:"numeric" });
-  let currentCalculation = null;
-  const money = (value) => currency.format(value);
-  const parseDate = (value) => {
+  const currency = new Intl.NumberFormat("en-IN", {style:"currency",currency:"INR",minimumFractionDigits:2,maximumFractionDigits:2});
+  const dateFormatter = new Intl.DateTimeFormat("en-IN",{day:"2-digit",month:"short",year:"numeric"});
+  const state = {payments:[],result:[]};
+  const money = value => currency.format(Number(value)||0);
+  const parseISO = value => {
     if (!value) return null;
-    const [year,month,day] = value.split("-").map(Number);
-    const date = new Date(Date.UTC(year,month-1,day));
-    return Number.isNaN(date.getTime()) ? null : date;
+    const parts=value.split("-").map(Number);
+    if(parts.length!==3 || parts.some(n=>!Number.isFinite(n))) return null;
+    const date=new Date(Date.UTC(parts[0],parts[1]-1,parts[2]));
+    return Number.isNaN(date.getTime())?null:date;
   };
-  const toISODate = (date) => date.toISOString().slice(0,10);
-  const addMonthsClamped = (date,months) => {
-    const monthIndex = date.getUTCMonth()+months;
-    const year = date.getUTCFullYear()+Math.floor(monthIndex/12);
-    const month = ((monthIndex%12)+12)%12;
-    const lastDay = new Date(Date.UTC(year,month+1,0)).getUTCDate();
-    return new Date(Date.UTC(year,month,Math.min(date.getUTCDate(),lastDay)));
-  };
-  const daysBetween = (a,b) => Math.round((b-a)/86400000);
-  const daysInMonth = (date) => new Date(Date.UTC(date.getUTCFullYear(),date.getUTCMonth()+1,0)).getUTCDate();
-  const displayDate = (date) => dateFormatter.format(date);
-
-  // Full month: annual nominal rate / 12. Partial month: actual days / days in that calendar month.
-  // Month anniversaries are anchored to the original start date and clamped to month-end.
-  function calculateInterest({principal,annualRate,startDate,endDate,type}) {
-    if (!(principal>0) || annualRate<0 || !Number.isFinite(principal+annualRate)) throw new Error("Enter valid principal and rate values.");
-    if (!startDate || !endDate || endDate<startDate) throw new Error("Please select a valid date range.");
-    const monthlyRate = annualRate/100/12;
-    const rows = [];
-    let cursor = new Date(startDate), balance = principal, totalInterest = 0, period = 0;
-    while (cursor<endDate) {
-      const anniversary = addMonthsClamped(startDate,period+1);
-      const periodEnd = anniversary<endDate ? anniversary : endDate;
-      const elapsedDays = daysBetween(cursor,periodEnd);
-      if (elapsedDays<=0) break;
-      const fraction = periodEnd.getTime()===anniversary.getTime() ? 1 : elapsedDays/daysInMonth(cursor);
-      const openingBalance = balance;
-      const interestBase = type==="simple" ? principal : balance;
-      const interest = interestBase*monthlyRate*fraction;
-      totalInterest += interest;
-      balance = principal+totalInterest;
-      rows.push({period:`${displayDate(cursor)} – ${displayDate(periodEnd)}`,openingBalance,interest,closingBalance:balance,days:elapsedDays});
-      cursor = periodEnd;
-      period += 1;
-    }
-    const days = daysBetween(startDate,endDate);
-    return {principal,annualRate,type,startDate:toISODate(startDate),endDate:toISODate(endDate),days,rows,totalInterest,totalAmount:principal+totalInterest,durationLabel:`${days} day${days===1?"":"s"} • ${rows.length} period${rows.length===1?"":"s"}`,calculatedAt:new Date().toISOString()};
+  const iso = date => date.toISOString().slice(0,10);
+  const daysBetween = (start,end) => Math.round((end-start)/86400000);
+  const displayDate = value => {const date=typeof value==="string"?parseISO(value):value;return date?dateFormatter.format(date):"—";};
+  const escapeHTML = value => String(value??"").replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[char]));
+  const appliedRate = () => $("#rateBasis").value==="maharera" ? Number($("#mclrRate").value)+2 : Number($("#directRate").value);
+  const rateLabel = () => ({maharera:"MahaRERA formula",agreement:"Agreement rate",custom:"Custom rate"}[$("#rateBasis").value]);
+  function updateRateUI(){
+    const basis=$("#rateBasis").value, isRera=basis==="maharera";
+    $("#mclrGroup").classList.toggle("d-none",!isRera);
+    $("#directRateGroup").classList.toggle("d-none",isRera);
+    $("#directRateLabel").textContent=basis==="agreement"?"Agreement annual interest rate (%)":"Custom annual interest rate (%)";
+    $("#directRateHelp").textContent=basis==="agreement"?"Enter the annual interest rate stated in your signed agreement.":"Enter the annual rate you want to use for this estimate.";
+    const rate=appliedRate();
+    $("#appliedRate").textContent=Number.isFinite(rate)?rate.toFixed(2)+"%":"—";
+    $("#summaryRate").textContent=Number.isFinite(rate)?rate.toFixed(2)+"%":"—";
+    $("#basisBadge").textContent=rateLabel();
   }
-
-  function readForm() {
-    return {principal:Number($("#principal").value),annualRate:Number($("#rate").value),startDate:parseDate($("#startDate").value),endDate:parseDate($("#endDate").value),type:$('input[name="interestType"]:checked').value};
+  function readSettings(){
+    const start=parseISO($("#compensationStart").value),end=parseISO($("#calculationEnd").value),deadline=parseISO($("#possessionDeadline").value);
+    const rate=appliedRate(),basis=Number($("#dayCount").value);
+    if(!start||!end||end<start) throw new Error("Select a valid compensation start date and calculation end date.");
+    if(!Number.isFinite(rate)||rate<0||rate>100) throw new Error("Enter a valid annual interest rate between 0 and 100%.");
+    if(!Number.isFinite(basis)||basis<=0) throw new Error("Select a valid day-count basis.");
+    return {start,end,deadline,rate,basis};
   }
-  function validateForm() {
-    const principal=$("#principal"),rate=$("#rate"),start=$("#startDate"),end=$("#endDate");
-    principal.setCustomValidity(Number(principal.value)>0?"":"Principal must be greater than zero.");
-    rate.setCustomValidity(Number(rate.value)>=0&&Number(rate.value)<=1000?"":"Rate must be between 0 and 1000.");
-    start.setCustomValidity(start.value?"":"Select a start date.");
-    end.setCustomValidity(end.value&&start.value&&end.value>=start.value?"":"End date must be on or after start date.");
-    form.classList.add("was-validated");
-    return form.checkValidity();
+  function calculate(){
+    const settings=readSettings();
+    const rows=state.payments.map((payment,index)=>{
+      const paymentDate=parseISO(payment.date);
+      const amount=Number(payment.amount);
+      if(!paymentDate||!Number.isFinite(amount)||amount<0) throw new Error("Payment row "+(index+1)+" has an invalid date or amount.");
+      const accrualStart=paymentDate>settings.start?paymentDate:settings.start;
+      const eligible=accrualStart<settings.end || accrualStart.getTime()===settings.end.getTime();
+      const days=eligible?Math.max(0,daysBetween(accrualStart,settings.end)):0;
+      const interest=eligible?amount*settings.rate*days/(100*settings.basis):0;
+      return {...payment,amount,eligibleFrom:iso(accrualStart),days,interest};
+    });
+    state.result=rows;
+    renderResult(rows,settings);
+    return rows;
   }
-  function escapeHTML(value) {
-    return String(value).replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[char]));
+  function renderPayments(){
+    $("#emptyPayments").classList.toggle("d-none",state.payments.length>0);
+    $("#paymentBody").innerHTML=state.payments.map((p,i)=>`<tr>
+      <td><input class="form-control form-control-sm ledger-date" type="date" data-field="date" data-index="${i}" value="${escapeHTML(p.date)}" aria-label="Payment date"></td>
+      <td><input class="form-control form-control-sm ledger-particular" type="text" data-field="particulars" data-index="${i}" value="${escapeHTML(p.particulars)}" aria-label="Particulars"></td>
+      <td><input class="form-control form-control-sm ledger-amount text-end" type="number" min="0" step="0.01" data-field="amount" data-index="${i}" value="${escapeHTML(p.amount)}" aria-label="Total amount"></td>
+      <td class="text-end small">${escapeHTML(state.result[i]?.eligibleFrom?displayDate(state.result[i].eligibleFrom):"—")}</td>
+      <td class="text-end small">${state.result[i]?.days??"—"}</td>
+      <td class="text-end fw-semibold ${state.result[i]?"text-success":""}">${state.result[i]?money(state.result[i].interest):"—"}</td>
+      <td><button class="btn btn-sm btn-link text-danger p-1" type="button" data-remove="${i}" aria-label="Remove payment row">×</button></td>
+    </tr>`).join("");
   }
-  function renderResult(result) {
-    $("#resultType").textContent=result.type==="simple"?"Simple interest":"Compound interest";
-    $("#totalAmount").textContent=money(result.totalAmount);
-    $("#principalResult").textContent=money(result.principal);
-    $("#interestResult").textContent=money(result.totalInterest);
-    $("#durationResult").textContent=result.durationLabel;
-    $("#breakdownCount").textContent=`${result.rows.length} row${result.rows.length===1?"":"s"}`;
-    $("#breakdownBody").innerHTML=result.rows.map(row=>`<tr><td>${escapeHTML(row.period)}<div class="text-secondary small">${row.days} day${row.days===1?"":"s"}</div></td><td class="text-end">${money(row.openingBalance)}</td><td class="text-end text-success fw-semibold">${money(row.interest)}</td><td class="text-end fw-semibold">${money(row.closingBalance)}</td></tr>`).join("");
-    $("#emptyBreakdown").classList.toggle("d-none",result.rows.length>0);
+  function renderResult(rows,settings){
+    const principal=rows.reduce((sum,row)=>sum+row.amount,0);
+    const interest=rows.reduce((sum,row)=>sum+row.interest,0);
+    $("#totalInterest").textContent=money(interest);
+    $("#eligiblePrincipal").textContent=money(principal);
+    $("#summaryRate").textContent=settings.rate.toFixed(2)+"%";
+    $("#appliedRate").textContent=settings.rate.toFixed(2)+"%";
+    $("#paymentCount").textContent=String(rows.length);
+    $("#periodSummary").textContent=displayDate(settings.start)+" – "+displayDate(settings.end);
+    $("#totalDays").textContent=rows.reduce((sum,row)=>sum+row.days,0).toLocaleString("en-IN");
+    $("#basisBadge").textContent=rateLabel();
+    renderPayments();
   }
-  function showToast(message) {
+  function toast(message){
     $("#toastMessage").textContent=message;
-    bootstrap.Toast.getOrCreateInstance($("#appToast"),{delay:2600}).show();
+    bootstrap.Toast.getOrCreateInstance($("#appToast"),{delay:3200}).show();
   }
-  function getHistory() {
-    try { const value=JSON.parse(localStorage.getItem(STORAGE_KEY)||"[]"); return Array.isArray(value)?value:[]; }
-    catch { return []; }
+  function normalizeHeader(value){return String(value??"").toLowerCase().replace(/[^a-z0-9₹]/g,"");}
+  function parseSheetDate(value,cell){
+    if(value instanceof Date && !Number.isNaN(value.getTime())) return iso(new Date(Date.UTC(value.getFullYear(),value.getMonth(),value.getDate())));
+    if(typeof value==="number" && window.XLSX){
+      const parsed=XLSX.SSF.parse_date_code(value);
+      if(parsed) return iso(new Date(Date.UTC(parsed.y,parsed.m-1,parsed.d)));
+    }
+    const raw=String(value??"").trim();
+    if(!raw) return "";
+    let match=raw.match(/^(\d{1,2})[-/. ]([A-Za-z]{3})[-/. ](\d{4})$/);
+    if(match){const d=new Date(`${match[2]} ${match[1]}, ${match[3]}`);if(!Number.isNaN(d.getTime()))return iso(new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())));}
+    match=raw.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})$/);
+    if(match){const d=new Date(Date.UTC(Number(match[3]),Number(match[2])-1,Number(match[1])));return iso(d);}
+    const d=new Date(raw);
+    return Number.isNaN(d.getTime())?"":iso(new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())));
   }
-  function renderHistory() {
-    const history=getHistory();
-    $("#emptyHistory").classList.toggle("d-none",history.length>0);
-    $("#historyBody").innerHTML=history.map(item=>`<tr><td>${escapeHTML(dateFormatter.format(new Date(item.calculatedAt)))}</td><td>${item.type==="simple"?"Simple":"Compound"}</td><td class="text-end">${money(item.principal)}</td><td class="text-end text-success">${money(item.totalInterest)}</td><td class="text-end fw-semibold">${money(item.totalAmount)}</td><td class="text-end"><button class="history-action" type="button" data-load-id="${escapeHTML(item.id)}">Load</button></td></tr>`).join("");
+  function findColumn(headers,patterns){
+    return headers.findIndex(header=>patterns.some(pattern=>pattern.test(normalizeHeader(header))));
   }
-  function saveHistory() {
-    if (!currentCalculation) return showToast("Calculate an amount before saving.");
-    const history=getHistory();
-    history.unshift({...currentCalculation,id:crypto.randomUUID?.()||String(Date.now())});
-    try { localStorage.setItem(STORAGE_KEY,JSON.stringify(history.slice(0,MAX_HISTORY)));renderHistory();showToast("Calculation saved in this browser."); }
-    catch { showToast("Unable to save. Check browser storage settings."); }
+  function importRows(matrix){
+    if(!matrix.length) throw new Error("The selected sheet is empty.");
+    let headerIndex=matrix.findIndex(row=>row.some(cell=>/date|total|amount|particular/i.test(String(cell??""))));
+    if(headerIndex<0) throw new Error("Could not find a header row. Include Date and Total columns.");
+    const headers=matrix[headerIndex]||[];
+    const dateIndex=findColumn(headers,[/^date$/,/paymentdate/,/transactiondate/,/receiptdate/]);
+    const totalIndex=findColumn(headers,[/^total₹?$/, /^totalamount$/, /total/]);
+    const amountIndex=totalIndex>=0?totalIndex:findColumn(headers,[/^amount$/, /paymentamount/]);
+    const particularsIndex=findColumn(headers,[/particular/,/description/,/narration/,/details/]);
+    if(dateIndex<0||amountIndex<0) throw new Error("Required columns not found. Please include Date and Total (₹) columns.");
+    const imported=[];
+    for(let i=headerIndex+1;i<matrix.length;i++){
+      const row=matrix[i]||[],date=parseSheetDate(row[dateIndex]),amount=Number(String(row[amountIndex]??"").replace(/[₹,\s]/g,""));
+      if(!date || !Number.isFinite(amount) || amount<=0) continue;
+      imported.push({date,particulars:String(particularsIndex>=0?row[particularsIndex]??"":"Payment").trim()||"Payment",amount});
+    }
+    if(!imported.length) throw new Error("No valid payment rows found. Check the Date and Total values.");
+    state.payments=imported.sort((a,b)=>a.date.localeCompare(b.date));
+    state.result=[];
+    renderPayments();
+    $("#importStatus").textContent=`Imported ${imported.length} payment rows. Amounts were read from the Total column when available.`;
+    try{calculate();}catch(error){toast(error.message);}
   }
-  function loadHistoryItem(id) {
-    const item=getHistory().find(entry=>entry.id===id);
-    if (!item) return;
-    $("#principal").value=item.principal;$("#rate").value=item.annualRate;
-    $("#startDate").value=item.startDate;$("#endDate").value=item.endDate;
-    $(`#${item.type}`).checked=true;form.classList.remove("was-validated");
-    currentCalculation=calculateInterest({principal:item.principal,annualRate:item.annualRate,startDate:parseDate(item.startDate),endDate:parseDate(item.endDate),type:item.type});
-    renderResult(currentCalculation);window.scrollTo({top:0,behavior:"smooth"});showToast("Saved calculation loaded.");
+  async function handleFile(file){
+    if(!file)return;
+    try{
+      const buffer=await file.arrayBuffer();
+      let matrix;
+      if(file.name.toLowerCase().endsWith(".csv")){
+        const text=await file.text();
+        matrix=text.split(/\r?\n/).filter(Boolean).map(line=>line.split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/).map(cell=>cell.replace(/^"|"$/g,"").replace(/""/g,'"')));
+      }else{
+        if(!window.XLSX) throw new Error("Excel parser could not be loaded. Refresh the page and try again.");
+        const workbook=XLSX.read(buffer,{type:"array",cellDates:true});
+        const sheet=workbook.Sheets[workbook.SheetNames[0]];
+        matrix=XLSX.utils.sheet_to_json(sheet,{header:1,defval:"",raw:true});
+      }
+      importRows(matrix);
+      toast("Payment statement imported successfully.");
+    }catch(error){$("#importStatus").textContent=error.message;toast(error.message);}
+  }
+  function exportCSV(){
+    if(!state.result.length){toast("Calculate compensation before exporting.");return;}
+    const headers=["Payment Date","Particulars","Total Amount (INR)","Eligible Interest Start","Eligible Days","Annual Rate (%)","Estimated Interest (INR)"];
+    const lines=[headers,...state.result.map(row=>[row.date,row.particulars,row.amount,row.eligibleFrom,row.days,appliedRate().toFixed(2),row.interest])];
+    const csv=lines.map(line=>line.map(value=>`"${String(value??"").replace(/"/g,'""')}"`).join(",")).join("\r\n");
+    const blob=new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8"});
+    const url=URL.createObjectURL(blob),link=document.createElement("a");
+    link.href=url;link.download="flat-delay-compensation-report.csv";link.click();URL.revokeObjectURL(url);
+  }
+  function downloadTemplate(){
+    const csv="Date,Particulars,Own Contribution (₹),SBI Bank (₹),Total (₹)\r\n21-Aug-2021,Builder Receipt - Agreement,108000,0,108000\r\n";
+    const blob=new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8"}),url=URL.createObjectURL(blob),link=document.createElement("a");
+    link.href=url;link.download="compensation-payment-template.csv";link.click();URL.revokeObjectURL(url);
   }
 
-  form.addEventListener("submit",event=>{
-    event.preventDefault();
-    if (!validateForm()) { form.querySelector(":invalid")?.focus(); return; }
-    try { currentCalculation=calculateInterest(readForm());renderResult(currentCalculation); }
-    catch(error) { showToast(error.message); }
+  $("#rateBasis").addEventListener("change",updateRateUI);
+  ["mclrRate","directRate"].forEach(id=>$("#"+id).addEventListener("input",updateRateUI));
+  $("#excelFile").addEventListener("change",event=>handleFile(event.target.files[0]));
+  $("#calculateBtn").addEventListener("click",()=>{try{calculate();toast("Compensation recalculated.");}catch(error){toast(error.message);}});
+  $("#addPaymentBtn").addEventListener("click",()=>{
+    state.payments.push({date:$("#compensationStart").value||iso(new Date()),particulars:"New payment",amount:0});
+    state.result=[];renderPayments();
   });
-  $("#saveBtn").addEventListener("click",saveHistory);
-  $("#printBtn").addEventListener("click",()=>currentCalculation?window.print():showToast("Calculate an amount before printing."));
-  $("#historyBody").addEventListener("click",event=>{
-    const button=event.target.closest("[data-load-id]");
-    if (button) loadHistoryItem(button.dataset.loadId);
+  $("#clearPaymentsBtn").addEventListener("click",()=>{
+    if(!state.payments.length)return;
+    if(window.confirm("Remove all imported payment rows?")){state.payments=[];state.result=[];renderPayments();$("#importStatus").textContent="Payment rows cleared.";}
   });
-  $("#clearHistoryBtn").addEventListener("click",()=>{
-    if (!getHistory().length) return;
-    if (window.confirm("Clear all saved calculations from this browser?")) { localStorage.removeItem(STORAGE_KEY);renderHistory();showToast("Calculation history cleared."); }
+  $("#paymentBody").addEventListener("change",event=>{
+    const target=event.target,index=Number(target.dataset.index),field=target.dataset.field;
+    if(!field||!state.payments[index])return;
+    state.payments[index][field]=field==="amount"?Number(target.value):target.value;
+    state.result=[];renderPayments();
   });
-  $("#resetBtn").addEventListener("click",()=>{
-    setTimeout(()=>{
-      form.classList.remove("was-validated");currentCalculation=null;
-      $("#breakdownBody").innerHTML="";$("#breakdownCount").textContent="";
-      $("#emptyBreakdown").classList.remove("d-none");
-      ["totalAmount","principalResult","interestResult","durationResult"].forEach(id=>$("#"+id).textContent="—");
-      $("#resultType").textContent="No calculation";
-    },0);
+  $("#paymentBody").addEventListener("click",event=>{
+    const button=event.target.closest("[data-remove]");
+    if(!button)return;
+    state.payments.splice(Number(button.dataset.remove),1);state.result=[];renderPayments();
   });
-  const today=new Date(), localToday=new Date(today.getFullYear(),today.getMonth(),today.getDate());
-  const yearAgo=new Date(today.getFullYear()-1,today.getMonth(),today.getDate());
-  $("#startDate").value=toISODate(new Date(Date.UTC(yearAgo.getFullYear(),yearAgo.getMonth(),yearAgo.getDate())));
-  $("#endDate").value=toISODate(new Date(Date.UTC(localToday.getFullYear(),localToday.getMonth(),localToday.getDate())));
-  renderHistory();
-  if (validateForm()) { currentCalculation=calculateInterest(readForm());renderResult(currentCalculation); }
+  $("#downloadTemplateBtn").addEventListener("click",downloadTemplate);
+  $("#exportBtn").addEventListener("click",exportCSV);
+  $("#printBtn").addEventListener("click",()=>state.result.length?window.print():toast("Calculate compensation before printing."));
+  $("#calculationEnd").value=iso(new Date());
+  updateRateUI();renderPayments();
 })();
