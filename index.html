@@ -99,6 +99,23 @@
           </div>
         </div></div>
 
+        <div class="card app-card mb-4"><div class="card-body p-4">
+          <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+            <div><h2 class="h5 fw-bold mb-1">Monthly interest report</h2><p class="small text-secondary mb-0">प्रत्येक महिन्यात जमा झालेले व्याज आणि आतापर्यंतचे एकूण व्याज.</p></div>
+            <span class="soft-badge"><span id="monthlyInterestCount">0</span> months</span>
+          </div>
+          <div class="row g-3 mb-3">
+            <div class="col-sm-6"><div class="metric-box"><div class="metric-label">Total monthly interest</div><div id="monthlyInterestTotal" class="metric-value">₹0.00</div></div></div>
+            <div class="col-sm-6"><div class="metric-box"><div class="metric-label">Calculation method</div><div class="metric-value">Daily accrual, monthly grouping</div></div></div>
+          </div>
+          <div class="table-responsive breakdown-wrap"><table class="table table-hover align-middle mb-0">
+            <thead><tr><th>Month</th><th class="text-end">Accrued days</th><th class="text-end">Monthly interest (₹)</th><th class="text-end">Cumulative interest (₹)</th></tr></thead>
+            <tbody id="monthlyInterestBody"></tbody>
+          </table></div>
+          <p id="emptyMonthlyInterest" class="small text-secondary py-2 mb-0">Calculate compensation to see the monthly interest breakdown.</p>
+          <p class="calculation-note mt-3 mb-0">Monthly interest is the sum of daily simple-interest accruals for all eligible payment rows. No compounding is applied. Monthly figures are a breakdown of the same total compensation, not additional interest.</p>
+        </div></div>
+
         <div class="card app-card"><div class="card-body p-4">
           <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
             <div><h2 class="h5 fw-bold mb-1">Date-wise payment ledger</h2><p class="small text-secondary mb-0">36 supplied dated payment entries are preloaded. Edit or delete each row; changes are applied when you recalculate.</p></div>
