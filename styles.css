@@ -27,3 +27,23 @@ body{background:var(--page);color:var(--ink);font-family:Inter,system-ui,-apple-
 .history-action{border:0;background:transparent;color:#2463a6;font-weight:650}
 @media(max-width:575.98px){main.container{padding-left:14px;padding-right:14px}.result-total{padding:1.15rem}.result-total .display-6{font-size:2rem}.app-card .card-body,.result-card .card-body{padding:1.15rem!important}}
 @media print{body{background:#fff!important;color:#111827}.app-navbar,.page-heading,#calculatorForm,.d-flex.gap-2,#historySection,footer,.toast-container{display:none!important}main.container{max-width:100%;padding:0}.row.g-4{display:block}.row.g-4>section{width:100%}.card{border:0!important;box-shadow:none!important;break-inside:avoid}.result-total{print-color-adjust:exact;-webkit-print-color-adjust:exact}.breakdown-wrap{max-height:none;overflow:visible}.table{font-size:9pt}.calculation-note{font-size:8pt}}
+.ledger-wrap{max-height:560px;overflow:auto}
+.ledger-wrap .table{min-width:860px}
+.ledger-date{min-width:132px}
+.ledger-particular{min-width:150px}
+.ledger-amount{min-width:116px}
+.rate-preview{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:.85rem 1rem;border:1px solid #dce8f3;border-radius:11px;background:#f3f7fb;color:#52677d;font-size:.84rem}
+.rate-preview strong{color:#17324d;font-size:1.15rem}
+.alert-info{border-color:#d7e8f8;background:#edf6ff;color:#315b7f}
+@media print{
+  .app-navbar,.page-heading,.alert,#importStatus,#excelFile,#downloadTemplateBtn,#clearPaymentsBtn,#calculateBtn,#exportBtn,#printBtn,#addPaymentBtn,footer,.toast-container{display:none!important}
+  main.container{max-width:100%;padding:0}
+  .row.g-4{display:block}
+  .row.g-4>section{width:100%}
+  .app-card,.result-card{border:0!important;box-shadow:none!important;break-inside:avoid}
+  .ledger-wrap{max-height:none;overflow:visible}
+  .ledger-wrap .table{min-width:0;font-size:8pt}
+  .ledger-date,.ledger-particular,.ledger-amount{border:0!important;padding:0!important;background:transparent!important;min-width:0;width:auto}
+  .ledger-wrap th:last-child,.ledger-wrap td:last-child{display:none}
+  .result-total{print-color-adjust:exact;-webkit-print-color-adjust:exact}
+}
