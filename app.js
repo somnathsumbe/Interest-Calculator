@@ -3,6 +3,20 @@
   const $ = (selector) => document.querySelector(selector);
   const currency = new Intl.NumberFormat("en-IN", {style:"currency",currency:"INR",minimumFractionDigits:2,maximumFractionDigits:2});
   const dateFormatter = new Intl.DateTimeFormat("en-IN",{day:"2-digit",month:"short",year:"numeric"});
+  const PROJECT_FINANCIALS = Object.freeze({
+    agreementValue: 7381752,
+    gstRate: 5,
+    gstAmount: 369088,
+    stampDutyRegistration: 269500
+  });
+  function renderProjectFinancials(){
+    const fmt=value=>new Intl.NumberFormat("en-IN",{style:"currency",currency:"INR",maximumFractionDigits:0}).format(value);
+    const packageTotal=PROJECT_FINANCIALS.agreementValue+PROJECT_FINANCIALS.gstAmount+PROJECT_FINANCIALS.stampDutyRegistration;
+    $("#agreementValue").textContent=fmt(PROJECT_FINANCIALS.agreementValue);
+    $("#agreementGst").textContent=fmt(PROJECT_FINANCIALS.gstAmount);
+    $("#stampRegistration").textContent=fmt(PROJECT_FINANCIALS.stampDutyRegistration);
+    $("#agreementPackageTotal").textContent=fmt(packageTotal);
+  }
   const DEFAULT_PAYMENTS = [["2021-08-21","Builder Receipt – Agreement",108000,0],["2021-08-28","Booking Amount – HDFC",92000,0],["2021-08-31","Stamp Duty & Registration",251500,0],["2022-03-28","SBI Loan Disbursement",0,781000],["2023-04-28","VTP Altaire RERA",115000,0],["2023-05-10","SBI Loan Disbursement",0,569486],["2023-09-18","SBI Loan Disbursement",0,272224],["2024-01-19","VTP Altaire RERA",100000,0],["2024-01-25","SBI Loan Disbursement",0,675083],["2024-06-02","VTP Taxes",18456,0],["2024-06-02","VTP Altaire RERA",69088,0],["2024-06-04","SBI Loan Disbursement",0,300000],["2024-08-22","SBI Loan Disbursement",0,387541],["2024-10-03","VTP Taxes",18454,0],["2024-10-03","VTP Altaire RERA",69088,0],["2024-10-09","SBI Loan Disbursement",0,300000],["2024-11-13","SBI Loan Disbursement",0,387542],["2024-12-26","SBI Loan Disbursement",0,387541],["2025-02-22","SBI Loan Disbursement",0,387542],["2025-05-03","SBI Loan Disbursement",0,387543],["2025-06-16","SBI Loan Disbursement",0,775084],["2025-12-06","VTP Altaire RERA",369087,0],["2025-12-06","VTP Taxes",18454,0],["2026-06-16","VTP Taxes",18454,0],["2026-06-16","VTP Altaire RERA",369088,0],["2026-11-05","VTP Builder Own Contribution",369088,0],["2026-11-05","VTP Builder Own Contribution Taxes",18454,0],["2026-11-05","TDS – Builder PAN",73818,0],["2026-11-05","Township Maintenance",13601,0],["2026-11-05","Maintenance GST",14404,0],["2026-11-05","MSEB",6500,0],["2026-11-05","Society Charges – Consultant",1500,0],["2026-11-05","Society Charges – Government",600,0],["2026-11-05","Corpus Fund",42578,0],["2026-11-05","Project Maintenance",66422,0],["2026-11-05","VTP Builder Own Contribution",313724,0]].map(([date,particulars,own,sbi])=>({date,particulars,own,sbi,amount:own+sbi}));
   const state = {payments:DEFAULT_PAYMENTS.map(row=>({...row})),result:[]};
   const money = value => currency.format(Number(value)||0);
@@ -236,7 +250,7 @@
   $("#exportBtn").addEventListener("click",exportCSV);
   $("#printBtn").addEventListener("click",()=>state.result.length?window.print():toast("Calculate compensation before printing."));
   $("#calculationEnd").value=localTodayISO();
-  updateRateUI();renderPayments();
+  renderProjectFinancials();updateRateUI();renderPayments();
   $("#importStatus").textContent="Loaded 36 dated payment entries from the supplied statement. SBI Life (blank Total; insurance) and undated rows were not loaded. Edit or delete entries as required.";
   try{calculate();}catch(error){toast(error.message);}
 })();
