@@ -7,6 +7,13 @@ Open `index.html` in a modern browser. For a local server, run `python -m http.s
 
 Bootstrap and SheetJS are loaded from CDNs. Excel parsing and calculations run in the browser; no backend or database is required.
 
+## Agreement reference values (VTP Altair T3-601)
+- Flat agreement value: ₹73,81,752.
+- GST at 5%: ₹3,69,088 (rounded to the nearest rupee).
+- Stamp duty + registration: ₹2,69,500.
+- Agreement value plus listed charges: ₹80,20,340.
+- These are reference values only. Agreement value is not inserted as a payment row or automatically used as the interest principal. GST, stamp duty and registration remain separate categories; verify legal eligibility of actual payments before including them in a claim.
+
 ## Features
 - Manually editable agreement possession deadline, compensation start date and calculation end date (defaults to the current date).
 - Interest basis options: MahaRERA formula, Agreement rate and Custom rate.
