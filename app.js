@@ -3,7 +3,8 @@
   const $ = (selector) => document.querySelector(selector);
   const currency = new Intl.NumberFormat("en-IN", {style:"currency",currency:"INR",minimumFractionDigits:2,maximumFractionDigits:2});
   const dateFormatter = new Intl.DateTimeFormat("en-IN",{day:"2-digit",month:"short",year:"numeric"});
-  const state = {payments:[],result:[]};
+  const DEFAULT_PAYMENTS = [["2021-08-21","Builder Receipt – Agreement",108000,0],["2021-08-28","Booking Amount – HDFC",92000,0],["2021-08-31","Stamp Duty & Registration",251500,0],["2022-03-28","SBI Loan Disbursement",0,781000],["2023-04-28","VTP Altaire RERA",115000,0],["2023-05-10","SBI Loan Disbursement",0,569486],["2023-09-18","SBI Loan Disbursement",0,272224],["2024-01-19","VTP Altaire RERA",100000,0],["2024-01-25","SBI Loan Disbursement",0,675083],["2024-06-02","VTP Taxes",18456,0],["2024-06-02","VTP Altaire RERA",69088,0],["2024-06-04","SBI Loan Disbursement",0,300000],["2024-08-22","SBI Loan Disbursement",0,387541],["2024-10-03","VTP Taxes",18454,0],["2024-10-03","VTP Altaire RERA",69088,0],["2024-10-09","SBI Loan Disbursement",0,300000],["2024-11-13","SBI Loan Disbursement",0,387542],["2024-12-26","SBI Loan Disbursement",0,387541],["2025-02-22","SBI Loan Disbursement",0,387542],["2025-05-03","SBI Loan Disbursement",0,387543],["2025-06-16","SBI Loan Disbursement",0,775084],["2025-12-06","VTP Altaire RERA",369087,0],["2025-12-06","VTP Taxes",18454,0],["2026-06-16","VTP Taxes",18454,0],["2026-06-16","VTP Altaire RERA",369088,0],["2026-11-05","VTP Builder Own Contribution",369088,0],["2026-11-05","VTP Builder Own Contribution Taxes",18454,0],["2026-11-05","TDS – Builder PAN",73818,0],["2026-11-05","Township Maintenance",13601,0],["2026-11-05","Maintenance GST",14404,0],["2026-11-05","MSEB",6500,0],["2026-11-05","Society Charges – Consultant",1500,0],["2026-11-05","Society Charges – Government",600,0],["2026-11-05","Corpus Fund",42578,0],["2026-11-05","Project Maintenance",66422,0],["2026-11-05","VTP Builder Own Contribution",313724,0]].map(([date,particulars,own,sbi])=>({date,particulars,own,sbi,amount:own+sbi}));
+  const state = {payments:DEFAULT_PAYMENTS.map(row=>({...row})),result:[]};
   const money = value => currency.format(Number(value)||0);
   const parseISO = value => {
     if (!value) return null;
@@ -56,14 +57,14 @@
   }
   function renderPayments(){
     $("#emptyPayments").classList.toggle("d-none",state.payments.length>0);
-    $("#paymentBody").innerHTML=state.payments.map((p,i)=>`<tr>
+    $("#paymentBody").innerHTML=state.payments.map((p,i)=>`<tr data-row="${i}">
       <td><input class="form-control form-control-sm ledger-date" type="date" data-field="date" data-index="${i}" value="${escapeHTML(p.date)}" aria-label="Payment date"></td>
       <td><input class="form-control form-control-sm ledger-particular" type="text" data-field="particulars" data-index="${i}" value="${escapeHTML(p.particulars)}" aria-label="Particulars"></td>
       <td><input class="form-control form-control-sm ledger-amount text-end" type="number" min="0" step="0.01" data-field="amount" data-index="${i}" value="${escapeHTML(p.amount)}" aria-label="Total amount"></td>
       <td class="text-end small">${escapeHTML(state.result[i]?.eligibleFrom?displayDate(state.result[i].eligibleFrom):"—")}</td>
       <td class="text-end small">${state.result[i]?.days??"—"}</td>
       <td class="text-end fw-semibold ${state.result[i]?"text-success":""}">${state.result[i]?money(state.result[i].interest):"—"}</td>
-      <td><button class="btn btn-sm btn-link text-danger p-1" type="button" data-remove="${i}" aria-label="Remove payment row">×</button></td>
+      <td class="text-nowrap"><button class="btn btn-sm btn-outline-primary me-1" type="button" data-edit="${i}">Edit</button><button class="btn btn-sm btn-outline-danger" type="button" data-remove="${i}">Delete</button></td>
     </tr>`).join("");
   }
   function renderResult(rows,settings){
@@ -116,7 +117,7 @@
     for(let i=headerIndex+1;i<matrix.length;i++){
       const row=matrix[i]||[],date=parseSheetDate(row[dateIndex]),amount=Number(String(row[amountIndex]??"").replace(/[₹,\s]/g,""));
       if(!date || !Number.isFinite(amount) || amount<=0) continue;
-      imported.push({date,particulars:String(particularsIndex>=0?row[particularsIndex]??"":"Payment").trim()||"Payment",amount});
+      imported.push({date,particulars:String(particularsIndex>=0?row[particularsIndex]??"":"Payment").trim()||"Payment",own:0,sbi:0,amount});
     }
     if(!imported.length) throw new Error("No valid payment rows found. Check the Date and Total values.");
     state.payments=imported.sort((a,b)=>a.date.localeCompare(b.date));
@@ -163,7 +164,7 @@
   $("#excelFile").addEventListener("change",event=>handleFile(event.target.files[0]));
   $("#calculateBtn").addEventListener("click",()=>{try{calculate();toast("Compensation recalculated.");}catch(error){toast(error.message);}});
   $("#addPaymentBtn").addEventListener("click",()=>{
-    state.payments.push({date:$("#compensationStart").value||localTodayISO(),particulars:"New payment",amount:0});
+    state.payments.push({date:$("#compensationStart").value||localTodayISO(),particulars:"New payment",own:0,sbi:0,amount:0});
     state.result=[];renderPayments();
   });
   $("#clearPaymentsBtn").addEventListener("click",()=>{
@@ -177,13 +178,26 @@
     state.result=[];renderPayments();
   });
   $("#paymentBody").addEventListener("click",event=>{
-    const button=event.target.closest("[data-remove]");
-    if(!button)return;
-    state.payments.splice(Number(button.dataset.remove),1);state.result=[];renderPayments();
+    const editButton=event.target.closest("[data-edit]");
+    if(editButton){
+      const row=document.querySelector('tr[data-row="'+editButton.dataset.edit+'"]');
+      row?.querySelector('[data-field="particulars"]')?.focus();
+      toast("Edit the date, particulars or total amount directly in this row, then recalculate.");
+      return;
+    }
+    const deleteButton=event.target.closest("[data-remove]");
+    if(!deleteButton)return;
+    const index=Number(deleteButton.dataset.remove);
+    if(window.confirm("Delete this payment entry?")){
+      state.payments.splice(index,1);state.result=[];renderPayments();
+      try{calculate();}catch(error){toast(error.message);}
+    }
   });
   $("#downloadTemplateBtn").addEventListener("click",downloadTemplate);
   $("#exportBtn").addEventListener("click",exportCSV);
   $("#printBtn").addEventListener("click",()=>state.result.length?window.print():toast("Calculate compensation before printing."));
   $("#calculationEnd").value=localTodayISO();
   updateRateUI();renderPayments();
+  $("#importStatus").textContent="Loaded 36 dated payment entries from the supplied statement. SBI Life (blank Total; insurance) and undated rows were not loaded. Edit or delete entries as required.";
+  try{calculate();}catch(error){toast(error.message);}
 })();
