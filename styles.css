@@ -47,3 +47,5 @@ body{background:var(--page);color:var(--ink);font-family:Inter,system-ui,-apple-
   .ledger-wrap th:last-child,.ledger-wrap td:last-child{display:none}
   .result-total{print-color-adjust:exact;-webkit-print-color-adjust:exact}
 }
+
+#demandBody input{min-width:118px}#demandBody .demand-particular{min-width:230px}#allocationBody select{min-width:220px}#allocationBody input{min-width:125px}
