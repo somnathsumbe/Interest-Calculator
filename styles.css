@@ -48,13 +48,8 @@ body{background:var(--page);color:var(--ink);font-family:Inter,system-ui,-apple-
   .result-total{print-color-adjust:exact;-webkit-print-color-adjust:exact}
 }
 
-#demandBody input{min-width:118px}#demandBody .demand-particular{min-width:230px}#allocationBody select{min-width:220px}#allocationBody input{min-width:125px}
 
 /* Highlight demand rows with overdue days / late payment exposure */
-#demandBody tr.late-payment-row>td{background-color:#fff0f0!important;color:#842029;border-top:1px solid #f1b8bd;border-bottom:1px solid #f1b8bd}
-#demandBody tr.late-payment-row>td:first-child{border-left:4px solid #dc3545;font-weight:800}
-#demandBody tr.late-payment-row input{border-color:#e7a3aa;background-color:#fffafa}
-#demandBody tr.late-payment-row:hover>td{background-color:#ffe3e5!important}
 
 /* Collapsible report sections: hidden by default, shown on demand. */
 .section-collapsible-content{display:none;}
