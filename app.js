@@ -18,11 +18,7 @@
     $("#agreementPackageTotal").textContent=fmt(packageTotal);
   }
   const DEFAULT_PAYMENTS = [["2021-08-21","Builder Receipt – Agreement",108000,0],["2021-08-28","Booking Amount – HDFC",92000,0],["2021-08-31","Stamp Duty & Registration",251500,0],["2022-03-28","SBI Loan Disbursement",0,781000],["2023-04-28","VTP Altaire RERA",115000,0],["2023-05-10","SBI Loan Disbursement",0,569486],["2023-09-18","SBI Loan Disbursement",0,272224],["2024-01-19","VTP Altaire RERA",100000,0],["2024-01-25","SBI Loan Disbursement",0,675083],["2024-06-02","VTP Taxes",18456,0],["2024-06-02","VTP Altaire RERA",69088,0],["2024-06-04","SBI Loan Disbursement",0,300000],["2024-08-22","SBI Loan Disbursement",0,387541],["2024-10-03","VTP Taxes",18454,0],["2024-10-03","VTP Altaire RERA",69088,0],["2024-10-09","SBI Loan Disbursement",0,300000],["2024-11-13","SBI Loan Disbursement",0,387542],["2024-12-26","SBI Loan Disbursement",0,387541],["2025-02-22","SBI Loan Disbursement",0,387542],["2025-05-03","SBI Loan Disbursement",0,387543],["2025-06-16","SBI Loan Disbursement",0,775084],["2025-12-06","VTP Altaire RERA",369087,0],["2025-12-06","VTP Taxes",18454,0],["2026-06-16","VTP Taxes",18454,0],["2026-06-16","VTP Altaire RERA",369088,0],["2026-11-05","VTP Builder Own Contribution",369088,0],["2026-11-05","VTP Builder Own Contribution Taxes",18454,0],["2026-11-05","TDS – Builder PAN",73818,0],["2026-11-05","Township Maintenance",13601,0],["2026-11-05","Maintenance GST",14404,0],["2026-11-05","MSEB",6500,0],["2026-11-05","Society Charges – Consultant",1500,0],["2026-11-05","Society Charges – Government",600,0],["2026-11-05","Corpus Fund",42578,0],["2026-11-05","Project Maintenance",66422,0],["2026-11-05","VTP Builder Own Contribution",313724,0]].map(([date,particulars,own,sbi])=>({date,particulars,own,sbi,amount:own+sbi}));
-  try{
-    if(saved&&Array.isArray(saved.demands)&&Array.isArray(saved.allocations)){
-    }
-  }catch(error){}
-  }
+  const state = {payments:DEFAULT_PAYMENTS.map(row=>({...row})),result:[]};
   const money = value => currency.format(Number(value)||0);
   const parseISO = value => {
     if (!value) return null;
@@ -94,13 +90,7 @@
     $("#emptyMonthlyInterest").classList.toggle("d-none",monthly.length>0);
   }
 
-    const rows=state.demands.map(d=>{const amount=Number(d.amount)||0,due=parseISO(d.dueDate);if(!due||amount<0)throw new Error("Invalid demand date or amount: "+d.id);const entries=state.allocations.filter(a=>a.demandId===d.id).map(a=>{const r=state.receipts[Number(a.receiptIndex)];return r?{date:parseISO(r.date),amount:Number(a.amount)||0}:null;}).filter(x=>x&&x.date&&x.amount>0).sort((a,b)=>a.date-b.date);let balance=amount,cursor=due,interest=0,daysTotal=0,paid=0;entries.forEach(e=>{if(e.date>settings.end)return;const applied=Math.min(balance,e.amount);if(e.date>due&&balance>0){const stop=e.date<settings.end?e.date:settings.end;const days=Math.max(0,daysBetween(cursor,stop));interest+=balance*rate*days/(100*settings.basis);daysTotal+=days;cursor=stop;}balance=Math.max(0,balance-applied);paid+=applied;if(e.date<=due)cursor=due;});if(balance>0&&settings.end>cursor&&settings.end>due){const start=cursor<due?due:cursor;const days=Math.max(0,daysBetween(start,settings.end));interest+=balance*rate*days/(100*settings.basis);daysTotal+=days;}return {...d,paid,balance,interest,lateDays:daysTotal};});return {rows,rate,totalInterest:rows.reduce((s,r)=>s+r.interest,0),outstanding:rows.reduce((s,r)=>s+r.balance,0)};
-  }
-    $("#soaReceiptBody").innerHTML=state.receipts.map(r=>"<tr><td>"+escapeHTML(r.id)+"</td><td>"+escapeHTML(r.reference)+"</td><td>"+displayDate(r.date)+"</td><td>"+escapeHTML(r.type)+"</td><td class=\"text-end\">"+money(r.amount)+"</td><td>"+escapeHTML(r.funding||"Not specified in SOA")+"</td></tr>").join("");
-    $("#demandLateInterest").textContent=money(x.totalInterest);$("#demandOutstanding").textContent=money(x.outstanding);$("#lateRateApplied").textContent=x.rate.toFixed(2)+"%";const gross=state.result.reduce((s,r)=>s+r.interest,0);$("#grossCompensationForNet").textContent=money(gross);const mappedReceipts=new Set(state.allocations.map(a=>Number(a.receiptIndex))).size;$("#netAfterLateInterest").textContent=mappedReceipts===state.receipts.length?money(gross-x.totalInterest):"Complete receipt mapping";
-    const receiptSums={};state.allocations.forEach(a=>{receiptSums[a.receiptIndex]=(receiptSums[a.receiptIndex]||0)+(Number(a.amount)||0);});const overs=Object.keys(receiptSums).filter(k=>receiptSums[k]>(Number(state.receipts[Number(k)]?.amount)||0)+0.005);
-    $("#allocationWarning").textContent=overs.length?"Warning: one or more SOA receipts are allocated for more than their receipt amount. Correct the allocations.":(state.allocations.length?"Receipt allocations are manually mapped. Verify each allocation against the original SOA. Split a receipt across demands using multiple rows.":"No receipt allocations added. Unallocated demands are currently treated as unpaid in this estimate.");
-  }
+
   function calculate(){
     const settings=readSettings();
     const rows=state.payments.map((payment,index)=>{
