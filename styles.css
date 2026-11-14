@@ -55,3 +55,7 @@ body{background:var(--page);color:var(--ink);font-family:Inter,system-ui,-apple-
 #demandBody tr.late-payment-row>td:first-child{border-left:4px solid #dc3545;font-weight:800}
 #demandBody tr.late-payment-row input{border-color:#e7a3aa;background-color:#fffafa}
 #demandBody tr.late-payment-row:hover>td{background-color:#ffe3e5!important}
+
+/* Collapsible report sections: hidden by default, shown on demand. */
+.section-collapsible-content{display:none;}
+.section-collapsible-content.is-visible{display:block;}
