@@ -113,18 +113,21 @@
         <div class="card app-card mb-4"><div class="card-body p-4">
           <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
             <div><h2 class="h5 fw-bold mb-1">Monthly interest report</h2><p class="small text-secondary mb-0">प्रत्येक महिन्यापर्यंत बिल्डरला भरलेली एकूण रक्कम आणि त्या महिन्याचे व्याज.</p></div>
-            <span class="soft-badge"><span id="monthlyInterestCount">0</span> months</span>
+            <div class="d-flex align-items-center gap-2"><span class="soft-badge"><span id="monthlyInterestCount">0</span> months</span><button type="button" class="btn btn-sm btn-outline-secondary" data-section-toggle="monthlyInterestContent" aria-expanded="false">Show</button></div>
           </div>
+          <div id="monthlyInterestContent" class="section-collapsible-content">
           <div class="table-responsive breakdown-wrap"><table class="table table-hover align-middle mb-0">
             <thead><tr><th>Month</th><th class="text-end">Total paid to builder (₹)</th><th class="text-end">Monthly interest (₹)</th></tr></thead>
             <tbody id="monthlyInterestBody"></tbody>
           </table></div>
           <p id="emptyMonthlyInterest" class="small text-secondary py-2 mb-0">Calculate compensation to see the monthly interest breakdown.</p>
           <p class="calculation-note mt-3 mb-0">Total paid to builder हा त्या महिन्याच्या अखेरपर्यंतच्या सर्व नोंदवलेल्या पेमेंटचा एकत्रित आकडा आहे. Monthly interest फक्त त्या महिन्याचे स्वतंत्र व्याज आहे; मागील व्याज मुद्दलात जोडले जात नाही.</p>
+          </div>
         </div></div>
 
         <div class="card app-card mb-4" id="demandReconciliationSection"><div class="card-body p-4">
-          <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2"><div><h2 class="h5 fw-bold mb-1">VTP Demand & Due Date Reconciliation</h2><p class="small text-secondary mb-0">SOA मधील Billing/Receipt Date ही Demand Date आणि Due Date स्वतंत्रपणे नोंदवली आहे.</p></div><button id="exportDemandBtn" class="btn btn-sm btn-outline-primary" type="button">Export demand report CSV</button></div>
+          <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2"><div><h2 class="h5 fw-bold mb-1">VTP Demand & Due Date Reconciliation</h2><p class="small text-secondary mb-0">SOA मधील Billing/Receipt Date ही Demand Date आणि Due Date स्वतंत्रपणे नोंदवली आहे.</p></div><div class="d-flex gap-2"><button type="button" class="btn btn-sm btn-outline-secondary" data-section-toggle="demandContent" aria-expanded="false">Show</button><button id="exportDemandBtn" class="btn btn-sm btn-outline-primary" type="button">Export demand report CSV</button></div></div>
+          <div id="demandContent" class="section-collapsible-content">
           <div class="alert alert-warning small mb-3">PDF मधील 19 demand rows आणि 35 receipt rows preloaded आहेत. SOA receipt total ₹73,63,298 आहे. Demand row sum मध्ये SOA billed total पेक्षा ₹17 फरक आहे; मूळ SOA शी पडताळणी करा. Receipt-to-demand mapping अंदाजाने केलेले नाही.</div>
           <div class="row g-3 mb-3"><div class="col-sm-4"><div class="metric-box"><div class="metric-label">Buyer late-payment interest (estimate)</div><div class="metric-value" id="demandLateInterest">₹0.00</div></div></div><div class="col-sm-4"><div class="metric-box"><div class="metric-label">Outstanding demand balance</div><div class="metric-value" id="demandOutstanding">₹0.00</div></div></div><div class="col-sm-4"><div class="metric-box"><div class="metric-label">Late interest rate used</div><div class="metric-value" id="lateRateApplied">10.80%</div></div></div></div>
           <div class="mb-3"><label for="lateRateMode" class="form-label">Buyer late-payment interest rate</label><select id="lateRateMode" class="form-select"><option value="same" selected>Use same rate as builder compensation</option><option value="custom">Use separate custom rate</option></select><div id="lateCustomRateGroup" class="mt-2 d-none"><input id="lateCustomRate" class="form-control" type="number" min="0" max="100" step=".01" value="10.80" aria-label="Custom buyer late-payment rate"></div></div>
@@ -134,18 +137,21 @@
           <div class="table-responsive ledger-wrap"><table class="table table-hover align-middle mb-0"><thead><tr><th>SOA Demand</th><th>SOA Receipt</th><th>Allocated amount (₹)</th><th>Receipt date</th><th>Action</th></tr></thead><tbody id="allocationBody"></tbody></table></div>
           <p id="allocationWarning" class="calculation-note mt-3 mb-0" aria-live="polite">No receipt allocations added yet.</p><div class="mt-3 p-3 rounded-3 bg-light"><div class="d-flex justify-content-between small"><span>Gross builder compensation</span><strong id="grossCompensationForNet">₹0.00</strong></div><div class="d-flex justify-content-between small mt-2"><span>Potential buyer late-payment interest</span><strong>Shown separately</strong></div><div class="d-flex justify-content-between mt-2 pt-2 border-top"><span class="fw-semibold">Indicative net (only if legal set-off is allowed)</span><strong id="netAfterLateInterest">₹0.00</strong></div></div>
           <p class="calculation-note mt-2 mb-0">Late interest is estimated on each demand outstanding from due date until each allocated receipt / calculation end date. This is not an automatic legal deduction. Verify agreement terms, demand allocation and applicable legal rate before relying on it.</p>
+          </div>
         </div></div>
         <div class="card app-card"><div class="card-body p-4">
           <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
             <div><h2 class="h5 fw-bold mb-1">Date-wise payment ledger</h2><p class="small text-secondary mb-0">36 supplied dated payment entries are preloaded. Edit or delete each row; changes are applied when you recalculate.</p></div>
-            <button id="addPaymentBtn" class="btn btn-sm btn-outline-primary" type="button">+ Add payment</button>
+            <div class="d-flex gap-2"><button type="button" class="btn btn-sm btn-outline-secondary" data-section-toggle="paymentLedgerContent" aria-expanded="false">Show</button><button id="addPaymentBtn" class="btn btn-sm btn-outline-primary" type="button">+ Add payment</button></div>
           </div>
+          <div id="paymentLedgerContent" class="section-collapsible-content">
           <div class="table-responsive ledger-wrap"><table class="table table-hover align-middle mb-0">
             <thead><tr><th>Date</th><th>Particulars</th><th class="text-end">Total (₹)</th><th class="text-end">Eligible from</th><th class="text-end">Days</th><th class="text-end">Interest (₹)</th><th>Actions</th></tr></thead>
             <tbody id="paymentBody"></tbody>
           </table></div>
           <p id="emptyPayments" class="text-secondary small py-3 mb-0">Upload your Excel statement or add payment entries to begin.</p>
           <p class="calculation-note mt-3 mb-0"><strong>Formula:</strong> Payment amount × annual rate × eligible days ÷ (100 × day-count basis). Each payment is calculated independently; no interest-on-interest is applied.</p>
+          </div>
         </div></div>
       </section>
     </div>
