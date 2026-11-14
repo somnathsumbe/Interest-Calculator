@@ -22,7 +22,7 @@
     </header>
 
     <div class="alert alert-info small" role="note">
-      <strong>Calculation approach:</strong> Builder delay compensation and buyer late-payment interest are calculated separately. Buyer late interest uses demand due dates and manually allocated SOA receipts; any legal set-off is shown only as indicative.
+      <strong>Calculation approach:</strong> Builder delay compensation is calculated independently for each dated payment using simple interest. No compounding or interest-on-interest is applied.
     </div>
 
     <div class="row g-4">
@@ -125,7 +125,6 @@
           </div>
         </div></div>
 
-        <div class="card app-card mb-4" id="demandReconciliationSection"><div class="card-body p-4">
           <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2"><div><h2 class="h5 fw-bold mb-1">VTP Demand & Due Date Reconciliation</h2><p class="small text-secondary mb-0">SOA मधील Billing/Receipt Date ही Demand Date आणि Due Date स्वतंत्रपणे नोंदवली आहे.</p></div><div class="d-flex gap-2"><button type="button" class="btn btn-sm btn-outline-secondary" data-section-toggle="demandContent" aria-expanded="false">Show</button><button id="exportDemandBtn" class="btn btn-sm btn-outline-primary" type="button">Export demand report CSV</button></div></div>
           <div id="demandContent" class="section-collapsible-content">
           <div class="alert alert-warning small mb-3">PDF मधील 19 demand rows आणि 35 receipt rows preloaded आहेत. SOA receipt total ₹73,63,298 आहे. Demand row sum मध्ये SOA billed total पेक्षा ₹17 फरक आहे; मूळ SOA शी पडताळणी करा. Receipt-to-demand mapping अंदाजाने केलेले नाही.</div>
