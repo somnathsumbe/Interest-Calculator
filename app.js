@@ -236,6 +236,7 @@
     link.href=url;link.download="compensation-payment-template.csv";link.click();URL.revokeObjectURL(url);
   }
 
+  document.querySelectorAll("[data-section-toggle]").forEach(button=>button.addEventListener("click",()=>{const panel=document.getElementById(button.dataset.sectionToggle);if(!panel)return;const opening=panel.classList.toggle("is-visible");button.textContent=opening?"Hide":"Show";button.setAttribute("aria-expanded",String(opening));}));
   $("#rateBasis").addEventListener("change",updateRateUI);
   ["mclrRate","directRate"].forEach(id=>$("#"+id).addEventListener("input",updateRateUI));
   $("#excelFile").addEventListener("change",event=>handleFile(event.target.files[0]));
